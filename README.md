@@ -4,9 +4,9 @@ Team FlowCare · MED-GWPYB3 · MEDATHON Filter 2
 
 ## Versions and access
 
-- Existing public frontend demo: https://masar-thaniya-flowcare.ai.studio/
+- Published full-stack demo: https://masar-thaniya-flowcare.ai.studio/
 - Full-stack source: `MED-GWPYB3_FlowCare_FullStack.zip` in this repository.
-- The new backend has been built and tested locally. The existing public demo has NOT yet been verified as running this backend. Do not present the old URL as proof of backend deployment.
+- The backend was published and verified on 10 November 2026 (Asia/Riyadh). The public /api/health endpoint returns {"ok":true,"storage":"sqlite","mode":"simulated-demo","version":"1.0.0"}. A critical assessment was saved through the public UI and its count survived a page reload.
 
 ## Implemented backend
 
@@ -62,7 +62,7 @@ Public HTTPS deployment should use COOKIE_SECURE=true. Never use this public dem
 
 ## Validation — 10 November 2026
 
-TypeScript and production build passed. Integration tests passed for workspace isolation, database persistence after restart, malformed safety inputs, stale revisions, red-flag escalation, absence of capable emergency destinations, atomic handover, duplicate handover, cross-origin writes and unknown operations. Browser testing confirmed a critical assessment is processed and its saved count survives reload.
+TypeScript and production build passed. Integration tests passed for workspace isolation, database persistence after restart, malformed safety inputs, stale revisions, red-flag escalation, absence of capable emergency destinations, atomic handover, duplicate handover, cross-origin writes and unknown operations. Browser testing on the published public URL confirmed a critical assessment is processed and its saved count survives reload. Google AI Studio also reported both integration test groups, type checking and production build passing on Node 22.23.2.
 
 Remaining limitations: no clinical validation; no real hospital/ambulance integration; no clinical identity or authorization system; no operational security assessment; no multiserver database; forecast and impact metrics are simulated. Build warnings remain for bundle size and future Vite config compatibility. This demonstrates backend implementation, not production readiness or guaranteed competition acceptance.
 
