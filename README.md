@@ -1,38 +1,69 @@
-# Masar Health + Thaniya
-Team FlowCare | MED-GWPYB3 | MEDATHON Filter 2
-Live demo: https://masar-thaniya-flowcare.ai.studio/
-## Implementation status
-This is a frontend simulation prototype built with React, TypeScript and Vite. It demonstrates structured patient screening, routing, Thaniya casualty coordination, a command center, a routing lab and a 3D visualization.
-**No backend service, database, authentication system, live hospital capacity feed or ambulance integration is implemented in this source snapshot.** The presence of Express or Gemini packages in package.json does not mean those services are implemented. If the competition requires an implemented backend, this submission does not yet meet that requirement.
-Patient cases, utilization, surge forecasts and confidence values are simulated. They are not measured clinical outcomes. The application is not a diagnostic device and has not been clinically validated. Do not use it to make real care decisions.
-## Download source
-The complete frontend source tree is provided in MED-GWPYB3_FlowCare_Source.zip in this repository. Download and extract it, then open the masar-source folder.
-## Run locally
-Use Node.js 22.12 or newer.
+# Masar Health + Thaniya — Full-stack prototype
+
+Team FlowCare · MED-GWPYB3 · MEDATHON Filter 2
+
+## Versions and access
+
+- Existing public frontend demo: https://masar-thaniya-flowcare.ai.studio/
+- Full-stack source: `MED-GWPYB3_FlowCare_FullStack.zip` in this repository.
+- The new backend has been built and tested locally. The existing public demo has NOT yet been verified as running this backend. Do not present the old URL as proof of backend deployment.
+
+## Implemented backend
+
+Node.js + Express API with SQLite storage, connected to the React frontend on the same origin.
+
+- GET /api/health: service readiness and demo version.
+- GET /api/state: isolated browser demo workspace.
+- POST /api/triage: server-side screening and routing, assessment summary saved in SQLite.
+- POST /api/actions: casualty creation, dispatch, handover, facility/capability simulation, balancing and reset.
+- Revision checking rejects stale writes with HTTP 409.
+- SQLite transactions update casualty status and bed counts together. Repeated handover does not increment occupancy twice.
+- Anonymous HttpOnly SameSite cookies isolate demonstrations. This is not a clinical user authentication system.
+- Basic validation, bounded demo records, same-origin writes, no persisted free-text casualty descriptions.
+- Audit events store action type and timestamps. Forecasts remain fictional scenarios, not trained model predictions.
+
+## Run
+
+Download and extract the FullStack ZIP, then open its `masar-source` directory. Use Node.js 24 LTS or newer.
+
 ```sh
 npm ci
-npm run dev
-```
-Open http://localhost:3000. The demonstration does not require a Gemini API key. Optional browser location and external map links depend on browser permissions and connectivity.
-```sh
+npm test
 npm run lint
 npm run build
-npm run preview
+npm start
 ```
-## Source map
-- src/components/PatientTriage.tsx: screening and patient journey
-- src/utils/routingEngine.ts: browser-side routing logic
-- src/components/ThaniyaMCI.tsx: simulated casualty workflow
-- src/components/CommandCenter.tsx: simulated operational dashboard
-- src/data/mockData.ts: fictional facilities and scenario values
-- src/data/translations.ts: UI translations
-## Review snapshot
-Exported from AI Studio on 10 November 2026. The original exported snapshot is commit 3afc83c6fd88741010198be4e5b5d8e3648cfa09 in the team's private development repository.
-This review copy excludes the conversation attachment from public/assets/aistudio. It removes the conflicting unused direct esbuild dependency and replaces the Bun lockfile with an npm lockfile. Application logic is unchanged. These packaging changes have not been deployed to the live demo.
-Validation on 10 November 2026: npm run lint and npm run build passed. Build warnings remain about bundle size and future Vite config compatibility. Passing these checks does not establish clinical accuracy, device coverage or production readiness.
-## Suggested judge walkthrough
-1. Select the critical chest-pain demo and inspect emergency escalation.
-2. Select the low-acuity demo and inspect the routing explanation.
-3. Explore fictional casualties in Thaniya and their workflow states.
-4. Inspect simulated utilization and surge views in the command center.
-Do not enter real patient data. Clinical safety review, deterministic scenario testing, a backend, verified data integrations and prospective validation remain future work.
+
+Open http://localhost:3000. For development use `npm run dev`. The server serves both API and built frontend. No Gemini API key is required.
+
+Environment: `PORT` (default 3000), `DB_PATH` (default data/masar.sqlite), `COOKIE_SECURE=true` when serving over HTTPS. Set environment variables in the host; .env.example documents them but is not loaded automatically.
+
+## Deployment
+
+A Dockerfile is included. Use a Node-capable host, one application instance, and a persistent writable volume mounted at /app/data. SQLite on an ephemeral Cloud Run filesystem will not survive instance replacement. For scalable deployment migrate persistence to a managed database. Docker deployment has not been executed in this review.
+
+```sh
+docker build -t masar-demo .
+docker run --rm -p 3000:8080 -e COOKIE_SECURE=false -v masar-data:/app/data masar-demo
+```
+
+Public HTTPS deployment should use COOKIE_SECURE=true. Never use this public demonstration for real patient information.
+
+## Files
+
+- server/app.ts: API, validation, workspace isolation, transactions.
+- server/index.ts: production static hosting and development integration.
+- src/api.ts: frontend API requests and revision management.
+- src/App.tsx: server-backed facility and casualty state.
+- src/components/PatientTriage.tsx: server triage integration.
+- src/components/CommandCenter.tsx: saved demo counts.
+- src/utils/routingEngine.ts: shared deterministic simulated routing rules.
+- tests/backend.test.ts: HTTP integration tests, restart persistence and safety failures.
+
+## Validation — 10 November 2026
+
+TypeScript and production build passed. Integration tests passed for workspace isolation, database persistence after restart, malformed safety inputs, stale revisions, red-flag escalation, absence of capable emergency destinations, atomic handover, duplicate handover, cross-origin writes and unknown operations. Browser testing confirmed a critical assessment is processed and its saved count survives reload.
+
+Remaining limitations: no clinical validation; no real hospital/ambulance integration; no clinical identity or authorization system; no operational security assessment; no multiserver database; forecast and impact metrics are simulated. Build warnings remain for bundle size and future Vite config compatibility. This demonstrates backend implementation, not production readiness or guaranteed competition acceptance.
+
+The conversation attachment is excluded from this source. The earlier frontend-only archive is retained as a historical snapshot; use the FullStack archive for the latest code.
