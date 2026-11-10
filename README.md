@@ -1,69 +1,71 @@
-# Masar Health + Thaniya — Full-stack prototype
+# Masar Health + Thaniya — FlowCare
 
-Team FlowCare · MED-GWPYB3 · MEDATHON Filter 2
+MEDATHON Filter 2 · Team MED-GWPYB3
 
-## Versions and access
+- Live demo: https://masar-thaniya-flowcare.ai.studio/
+- Submission repository: https://github.com/zayedalnefaie-spec/masar-thaniya-medathon
 
-- Published full-stack demo: https://masar-thaniya-flowcare.ai.studio/
-- Full-stack source: `MED-GWPYB3_FlowCare_FullStack.zip` in this repository.
-- The backend was published and verified on 10 November 2026 (Asia/Riyadh). The public /api/health endpoint returns {"ok":true,"storage":"sqlite","mode":"simulated-demo","version":"1.0.0"}. A critical assessment was saved through the public UI and its count survived a page reload.
+A software prototype for structured symptom screening, simulated facility routing, mass-casualty dispatch/handover and a command center. All cases, capacities, forecasts and impact figures are synthetic. It is not a diagnostic tool, clinically validated triage system or operational ambulance/hospital service.
 
-## Implemented backend
+## Submission files
 
-Node.js + Express API with SQLite storage, connected to the React frontend on the same origin.
+Download and extract `MED-GWPYB3_FlowCare_FullStack.zip` for the current frontend and backend. The earlier `MED-GWPYB3_FlowCare_Source.zip` is a historical frontend-only snapshot. Use the Filter2 PDF for the completed presentation; the PPTX is editable.
 
-- GET /api/health: service readiness and demo version.
-- GET /api/state: isolated browser demo workspace.
-- POST /api/triage: server-side screening and routing, assessment summary saved in SQLite.
-- POST /api/actions: casualty creation, dispatch, handover, facility/capability simulation, balancing and reset.
-- Revision checking rejects stale writes with HTTP 409.
-- SQLite transactions update casualty status and bed counts together. Repeated handover does not increment occupancy twice.
-- Anonymous HttpOnly SameSite cookies isolate demonstrations. This is not a clinical user authentication system.
-- Basic validation, bounded demo records, same-origin writes, no persisted free-text casualty descriptions.
-- Audit events store action type and timestamps. Forecasts remain fictional scenarios, not trained model predictions.
+Verification on 10 November 2026: five integration tests, TypeScript checks and production build passed locally. The public health endpoint returned Firestore connected, Anonymous Auth enabled and version 1.2.0. Technical verification is not clinical validation.
+
+## Source layout
+
+`src/` contains the React/TypeScript frontend, demo data and shared routing rules. `server/` contains the Express API and storage adapters. `tests/backend.test.ts` contains five HTTP integration tests. `firestore.rules` specifies owner isolation. `firebase-applet-config.json` is public Firebase client configuration, not an administrative credential.
 
 ## Run
 
-Download and extract the FullStack ZIP, then open its `masar-source` directory. Use Node.js 24 LTS or newer.
+Use Node.js 22.13+ (including `node:sqlite`) and npm.
 
 ```sh
-npm ci
-npm test
-npm run lint
+npm install
+npm run dev
+```
+
+The Express server starts on port 3000 and serves Vite in development. For production:
+
+```sh
 npm run build
 npm start
 ```
 
-Open http://localhost:3000. For development use `npm run dev`. The server serves both API and built frontend. No Gemini API key is required.
+Production defaults to Firestore. For your own deployment, configure your own Firebase project, enable Anonymous Authentication, create the named Firestore database, deploy `firestore.rules`, replace the public client configuration, and set `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`, `FIREBASE_API_KEY`. No service-account JSON or broad shared-runtime IAM grant is required. Do not use the demonstration project's data for production.
 
-Environment: `PORT` (default 3000), `DB_PATH` (default data/masar.sqlite), `COOKIE_SECURE=true` when serving over HTTPS. Set environment variables in the host; .env.example documents them but is not loaded automatically.
-
-## Deployment
-
-A Dockerfile is included. Use a Node-capable host, one application instance, and a persistent writable volume mounted at /app/data. SQLite on an ephemeral Cloud Run filesystem will not survive instance replacement. For scalable deployment migrate persistence to a managed database. Docker deployment has not been executed in this review.
+Explicit local test storage:
 
 ```sh
-docker build -t masar-demo .
-docker run --rm -p 3000:8080 -e COOKIE_SECURE=false -v masar-data:/app/data masar-demo
+STORAGE_BACKEND=sqlite npm run dev
 ```
 
-Public HTTPS deployment should use COOKIE_SECURE=true. Never use this public demonstration for real patient information.
+SQLite is not an automatic production fallback. The bundled frontend still initializes Firebase Auth; local backend tests use isolated SQLite databases directly.
 
-## Files
+## Architecture and retention
 
-- server/app.ts: API, validation, workspace isolation, transactions.
-- server/index.ts: production static hosting and development integration.
-- src/api.ts: frontend API requests and revision management.
-- src/App.tsx: server-backed facility and casualty state.
-- src/components/PatientTriage.tsx: server triage integration.
-- src/components/CommandCenter.tsx: saved demo counts.
-- src/utils/routingEngine.ts: shared deterministic simulated routing rules.
-- tests/backend.test.ts: HTTP integration tests, restart persistence and safety failures.
+The browser signs in anonymously with Firebase's persistent browser identity. Express verifies Firebase ID tokens cryptographically, then calls Firestore REST using the user's token. Rules restrict a workspace at `/demoWorkspaces/{uid}` to that authenticated owner. State updates use Firestore `updateTime` preconditions and reject stale revisions.
 
-## Validation — 10 November 2026
+There is no automatic 24-hour record deletion. Clearing browser/site data, changing browser or using private browsing can lose access to an anonymous workspace. Permanent storage and uninterrupted hosting are not guaranteed. The historical 400-day cookie remains in the implementation, but Firebase browser identity determines production workspace access.
 
-TypeScript and production build passed. Integration tests passed for workspace isolation, database persistence after restart, malformed safety inputs, stale revisions, red-flag escalation, absence of capable emergency destinations, atomic handover, duplicate handover, cross-origin writes and unknown operations. Browser testing on the published public URL confirmed a critical assessment is processed and its saved count survives reload. Google AI Studio also reported both integration test groups, type checking and production build passing on Node 22.23.2.
+## Technical checks
 
-Remaining limitations: no clinical validation; no real hospital/ambulance integration; no clinical identity or authorization system; no operational security assessment; no multiserver database; forecast and impact metrics are simulated. Build warnings remain for bundle size and future Vite config compatibility. This demonstrates backend implementation, not production readiness or guaranteed competition acceptance.
+```sh
+npm test
+npm run lint
+npm run build
+```
 
-The conversation attachment is excluded from this source. The earlier frontend-only archive is retained as a historical snapshot; use the FullStack archive for the latest code.
+Tests cover isolated workspaces, high/low-acuity demo paths, stale writes, duplicate handover, cross-origin writes, retention beyond 24 hours, cookie renewal and storage failure. These tests use SQLite/test doubles; a successful test suite does not establish clinical accuracy or independently prove deployed Firestore security. Live verification must be performed separately.
+
+## Limits relevant to reviewers
+
+- Owners can write their own synthetic workspace directly within the Firestore rule limits; this is demo isolation, not clinical authorization or a tamper-proof audit trail.
+- Rules bound the outer document and the serialized state size; they do not validate every nested patient/facility field. The Express API validates its own accepted inputs.
+- The health probe creates an anonymous test identity to check connectivity. Do not use it for high-frequency monitoring; rate limiting and a side-effect-free health design are future hardening work.
+- Workspace creation is not designed for simultaneous first requests from many tabs. Normal updates use optimistic concurrency checks.
+- No real patient data, live facility capacity, EMS integration, clinical validation or measured benefit is included.
+- Arabic and English are the main demonstration languages. Language controls and other visual modules should not be interpreted as clinically validated translations or prediction models.
+
+Built for demonstration and technical review, not patient care.
